@@ -6,15 +6,26 @@ import Calendar from 'primevue/calendar';
 
 
 const eventos = [new Date(2024, 0, 10), new Date(2024, 0, 15)];
+const dias = eventos.map(data => data.getDate());
+console.log(dias);
+
+
+let _calendario;
+
 
 onMounted(() => {
+
+
+  _calendario = document.querySelector('#calendario') as HTMLElement;
 
   const modal = document.querySelector('#modal') as HTMLElement;
   const tds = document.querySelectorAll('td');
 
   tds.forEach(td => {
     const span = td.querySelector('span');
+
     span!.addEventListener('mouseenter', (event) => {
+
       const { clientX, clientY } = event;
 
       modal!.style.left = `${clientX}px`;
@@ -37,8 +48,8 @@ onMounted(() => {
 
 <template>
   <div>
-    <Calendar inline selectionMode="multiple" :modelValue="eventos" id="calendario"
-      @date-select="console.log('clicou')" />
+    <Calendar id="calendario" locale="pt" dateFormat="dd/mm/yyyy" inline selectionMode="multiple" :modelValue="eventos"
+      @date-select="console.log($event)" />
   </div>
 
   <div id="modal" class="hidden">

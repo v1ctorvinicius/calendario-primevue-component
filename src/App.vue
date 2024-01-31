@@ -1,80 +1,87 @@
 <script setup lang="ts">
 
-import { ref, onMounted, onUpdated, onBeforeUpdate, watch } from "vue";
+import { ref } from "vue";
 import 'primevue/resources/themes/md-dark-deeppurple/theme.css'
 import Calendar from 'primevue/calendar';
 
+const apiResponse = ref<Evento[]>([
+  {
+    dia: 10,
+    mes: 0,
+    ano: 2024,
+    titulo: 'Reunião manhã',
+    descricao: 'Reunião do grupo'
+  },
+  {
+    dia: 10,
+    mes: 0,
+    ano: 2024,
+    titulo: 'Reunião tarde',
+    descricao: 'Reunião do grupo'
+  },
+  {
+    dia: 15,
+    mes: 0,
+    ano: 2024,
+    titulo: 'Entrega',
+    descricao: 'Entrega de projeto'
 
-const eventos = [new Date(2024, 0, 10), new Date(2024, 0, 15)];
-const dias = eventos.map(data => data.getDate());
-const meses = eventos.map(data => data.getMonth());
+  }
+]);
 
-let _tds;
+interface Evento {
+  dia: number;
+  mes: number;
+  ano: number;
+  titulo: string;
+  descricao: string;
+}
 
-const teste = ref(0);
+const eventos = apiResponse.value.map(evento => new Date(evento.ano, evento.mes, evento.dia));
 
-const showModal = ref(false)
+const dias = apiResponse.value.map(data => data.dia);
 
-const position = ref({
+const meses = apiResponse.value.map(data => data.mes);
+const anos = apiResponse.value.map(data => data.ano);
+const titulos = apiResponse.value.map(data => data.titulo);
+const descricoes = apiResponse.value.map(data => data.descricao);
+
+const showModal = ref(false);
+const tituloModal = ref('');
+const descricaoModal = ref('');
+
+const posicaoModal = ref({
   left: 0,
   top: 0
 })
 
-onBeforeUpdate(() => {
-  console.log("Antes de atualizar");
-})
-
-onMounted(() => {
-  // setup();
-})
-
-// function setup() {
-//   const modal = document.querySelector('#modal') as HTMLElement;
-//   _tds = document.querySelectorAll('td');
-
-//   _tds.forEach(td => {
-//     const span = td.querySelector('span');
-
-//     span!.addEventListener('mouseenter', (event) => {
-//       const targetElement = event.target! as HTMLElement;
-//       console.log("Elemento: ", targetElement.innerHTML);
-
-//       if (dias.includes(Number.parseInt(targetElement.innerHTML))) {
-//         console.log("É AQUI");
-
-//         const { clientX, clientY } = event;
-
-//         modal!.style.left = `${clientX}px`;
-//         modal!.style.top = `${clientY}px`;
-
-//         modal.classList.add('show');
-//       }
-//     });
-
-//     span!.addEventListener('mouseleave', (event) => {
-//       modal.classList.remove('show');
-//     });
-
-//     span!.setAttribute('style', 'cursor: pointer;');
-//   })
-
-
-
-
+let _eventosDoDia: Evento[];
 
 function execute(valor: number, event: MouseEvent) {
+  // const eventoDoDia = apiResponse.value.find(event => event.dia === valor);
+  const _eventosDoDia = apiResponse.value.filter(event => event.dia === valor);
+  console.log("eventos: ", _eventosDoDia);
+
+
+
+  const tituloDoEvento = _eventosDoDia ? _eventosDoDia.titulo : '';
+  const descricaoDoEvento = _eventosDoDia ? _eventosDoDia.descricao : '';
+
+
   if (dias.includes(valor)) {
-    position.value.left = event.clientX;
-    position.value.top = event.clientY;
+    posicaoModal.value.left = event.clientX + 20;
+    posicaoModal.value.top = event.clientY + 20;
     showModal.value = true
+    tituloModal.value = tituloDoEvento;
+    descricaoModal.value = descricaoDoEvento;
   }
 }
 </script>
 
 <template>
   <div>
-    <Calendar id="calendario" locale="pt" dateFormat="dd/mm/yyyy" inline selectionMode="multiple" :modelValue="eventos"
-      @date-select="console.log($event)" :pt="{}" @month-change="() => { teste++; console.log(teste) }">
+    <Calendar id="calendario" locale="pt" inline selectionMode="multiple" :modelValue="eventos"
+      @date-select="console.log($event)">
 
       <template #date="slotProps">
 
@@ -82,17 +89,21 @@ function execute(valor: number, event: MouseEvent) {
           style=" width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
           {{ slotProps.date.day }}
         </div>
-
+ 
       </template>
 
     </Calendar>
 
   </div>
 
-  <div id="modal" :class="{ show: showModal }" :style="{ left: position.left + 'px', top: position.top + 'px' }">
-    <h2>Título do Modal</h2>
-    <p>Conteúdo do modal...</p>
-    <button id="fechar-modal">Fechar</button>
+  <div id="modal" :class="{ show: showModal }" :style="{ left: posicaoModal.left + 'px', top: posicaoModal.top + 'px' }">
+    <div v-for="evento in _eventosDoDia">
+      {{ _eventosDoDia }}
+      <h2>{{ evento.titulo }}</h2>
+      <p>{{ descricaoModal }}</p>
+
+    </div>
+
   </div>
 </template>
 

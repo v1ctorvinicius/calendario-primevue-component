@@ -62,7 +62,8 @@ function execute(valor: number, event: MouseEvent) {
   const _eventosDoDia = apiResponse.value.filter(event => event.dia === valor);
   console.log("eventos: ", _eventosDoDia);
 
-
+  const titulosModal = _eventosDoDia.filter(event => event.titulo);
+  const descricoesModal = _eventosDoDia.filter(event => event.descricao);
 
   const tituloDoEvento = _eventosDoDia ? _eventosDoDia.titulo : '';
   const descricaoDoEvento = _eventosDoDia ? _eventosDoDia.descricao : '';
@@ -80,6 +81,7 @@ function execute(valor: number, event: MouseEvent) {
 
 <template>
   <div>
+
     <Calendar id="calendario" locale="pt" inline selectionMode="multiple" :modelValue="eventos"
       @date-select="console.log($event)">
 
@@ -89,7 +91,7 @@ function execute(valor: number, event: MouseEvent) {
           style=" width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
           {{ slotProps.date.day }}
         </div>
- 
+
       </template>
 
     </Calendar>

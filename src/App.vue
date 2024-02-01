@@ -1,92 +1,120 @@
 <script setup lang="ts">
-
-import { ref } from "vue";
+import { ref, onMounted, onUpdated, onBeforeUpdate, watch } from "vue";
+import axios from 'axios';
 import 'primevue/resources/themes/md-dark-deeppurple/theme.css'
 import Calendar from 'primevue/calendar';
 
-const apiResponse = ref<Evento[]>([
-  {
-    dia: 10,
-    mes: 0,
-    ano: 2024,
-    titulo: 'Reunião manhã',
-    descricao: 'Reunião do grupo'
-  },
-  {
-    dia: 10,
-    mes: 0,
-    ano: 2024,
-    titulo: 'Reunião tarde',
-    descricao: 'Reunião do grupo'
-  },
-  {
-    dia: 15,
-    mes: 0,
-    ano: 2024,
-    titulo: 'Entrega',
-    descricao: 'Entrega de projeto'
-
-  }
-]);
-
-interface Evento {
-  dia: number;
-  mes: number;
-  ano: number;
+interface EventoInfos {
   titulo: string;
   descricao: string;
+  hora_inicio: string;
+  hora_fim: string;
 }
 
-const eventos = apiResponse.value.map(evento => new Date(evento.ano, evento.mes, evento.dia));
+interface Evento {
+  data: string;
+  id: string;
+  eventos_dia: EventoInfos[]
+}
 
-const dias = apiResponse.value.map(data => data.dia);
 
-const meses = apiResponse.value.map(data => data.mes);
-const anos = apiResponse.value.map(data => data.ano);
-const titulos = apiResponse.value.map(data => data.titulo);
-const descricoes = apiResponse.value.map(data => data.descricao);
+const eventosDoMes = ref<Evento[]>([]);
 
-const showModal = ref(false);
-const tituloModal = ref('');
-const descricaoModal = ref('');
+axios.get('http://localhost:3000/eventos').then(resposta => {
+  console.log(resposta.data)
+  //@ts-ignore
+  eventosDoMes.value = resposta.data.reduce((acc, valor) => {
+    //@ts-ignore
+    if (acc.find(e => e.data == valor.data)) {
+      //@ts-ignore
 
-const posicaoModal = ref({
+      acc.find(e => e.data == valor.data).eventos_dia.push({
+        titulo: valor.titulo,
+        descricao: valor.descricao,
+        hora_inicio: valor.hora_inicio,
+        hora_fim: valor.hora_fim
+      })
+    }
+    else {
+      acc.push({
+        data: valor.data,
+        id: valor.id,
+        eventos_dia: [
+          {
+            titulo: valor.titulo,
+            descricao: valor.descricao,
+            hora_inicio: valor.hora_inicio,
+            hora_fim: valor.hora_fim
+          }
+        ]
+      })
+    }
+    return acc
+  }, [] as Evento[])
+
+
+  console.log("?", eventosDoMes);
+
+
+})
+
+
+const eventoSelecionado = ref()
+
+
+// const eventos = [new Date(2024, 0, 10), new Date(2024, 0, 15)];
+// const eventomap: Evento[] = eventos.map((e, index) => {
+//   return {
+//     data: e.getDate().toString(),
+//     id: index.toString(),
+
+//     eventos_dia: [
+//       {
+//         titulo: e.getDate() == 10 ? 'Reuniao manhã' : "Reunião Noite",
+//         descricao: 'Reuniao do setor',
+//         hora_inicio: '10:00',
+//         hora_fim: '11:00'
+//       },
+//       {
+//         titulo: e.getDate() == 10 ? 'Reuniao manhã' : "Reunião Noite",
+//         descricao: 'Reuniao do setor',
+//         hora_inicio: '10:00',
+//         hora_fim: '11:00'
+//       }
+//     ]
+
+//   }
+// })
+
+const teste = ref(0);
+const showModal = ref(false)
+const position = ref({
   left: 0,
   top: 0
 })
 
-let _eventosDoDia: Evento[];
-
 function execute(valor: number, event: MouseEvent) {
-  // const eventoDoDia = apiResponse.value.find(event => event.dia === valor);
-  const _eventosDoDia = apiResponse.value.filter(event => event.dia === valor);
-  console.log("eventos: ", _eventosDoDia);
-
-  const titulosModal = _eventosDoDia.filter(event => event.titulo);
-  const descricoesModal = _eventosDoDia.filter(event => event.descricao);
-
-  const tituloDoEvento = _eventosDoDia ? _eventosDoDia.titulo : '';
-  const descricaoDoEvento = _eventosDoDia ? _eventosDoDia.descricao : '';
-
-
-  if (dias.includes(valor)) {
-    posicaoModal.value.left = event.clientX + 20;
-    posicaoModal.value.top = event.clientY + 20;
+  console.log(valor)
+  const evento = eventosDoMes.value.find(e => new Date(e.data).getDate() == valor)
+  console.log(evento)
+  if (evento) {
+    position.value.left = event.clientX;
+    position.value.top = event.clientY;
     showModal.value = true
-    tituloModal.value = tituloDoEvento;
-    descricaoModal.value = descricaoDoEvento;
+
+    eventoSelecionado.value = evento
   }
 }
+
+
 </script>
 
 <template>
   <div>
-
-    <Calendar id="calendario" locale="pt" inline selectionMode="multiple" :modelValue="eventos"
-      @date-select="console.log($event)">
-
+    <Calendar id="calendario" locale="pt" dateFormat="dd/mm/yyyy" inline selectionMode="multiple"
+      :modelValue="eventosDoMes.map(e => new Date(e.data))" @date-select="console.log($event)" :pt="{}"
+      @month-change="() => { teste++; console.log(teste) }">
       <template #date="slotProps">
-
         <div @mouseover="($event) => execute(slotProps.date.day, $event)" @mouseleave="showModal = false"
           style=" width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
           {{ slotProps.date.day }}
@@ -98,12 +126,10 @@ function execute(valor: number, event: MouseEvent) {
 
   </div>
 
-  <div id="modal" :class="{ show: showModal }" :style="{ left: posicaoModal.left + 'px', top: posicaoModal.top + 'px' }">
-    <div v-for="evento in _eventosDoDia">
-      {{ _eventosDoDia }}
+  <div v-if="showModal && eventoSelecionado" id="modal" :style="{ left: position.left + 'px', top: position.top + 'px' }">
+    <div v-for="evento in eventoSelecionado.eventos_dia">
       <h2>{{ evento.titulo }}</h2>
-      <p>{{ descricaoModal }}</p>
-
+      <p>Conteúdo do modal...</p>
     </div>
 
   </div>
@@ -120,18 +146,8 @@ td:hover {
   top: 0;
   left: 0;
   z-index: 10;
-  visibility: hidden;
-  opacity: 0;
   transition: visibility 0s linear 0.2s, opacity 0.2s linear;
   background-color: rgba(0, 0, 0, 0.5);
   padding: 20px;
-}
-
-#modal.show {
-  visibility: visible;
-  opacity: 1;
-  transition: visibility 0s linear 0.2s, opacity 0.2s linear;
-
-
 }
 </style>
